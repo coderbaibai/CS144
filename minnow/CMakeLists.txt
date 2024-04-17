@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.22.1)
 project(minnow CXX)
 
 set(CMAKE_CXX_COMPILER "/usr/local/bin/g++")
-# set(CMAKE_C_COMPILER "/usr/bin/clang")
+set(CMAKE_C_COMPILER "/usr/local/bin/gcc")
 
 if(${CMAKE_GENERATOR} STREQUAL "Unix Makefiles")
   set(CMAKE_MAKE_PROGRAM "${PROJECT_SOURCE_DIR}/scripts/make-parallel.sh" CACHE STRING "" FORCE)
