@@ -166,4 +166,46 @@
    - Reading the Minnow support code
    
      - 阅读源码，主要是***util/socket.hh***和***util/file_descriptor.hh***这里基于面向对象设计原则对socket系统调用进行了封装
-     - 
+     - 一些技巧
+      - 封装传统C释放资源的方式
+      ```cpp
+        // 正常来说，良好的C++程序通过构造函数和析构函数来获取资源、释放资源。
+        // 而传统的C程序通过特定的函数来释放资源
+        // C++程序有可能因为发生了异常，强制退出当前函数，这样就有资源无法释放的可能
+        // 因此我们可以将清理资源的代码绑定到该资源指针构造的unique_ptr之上
+        // 伴随着声明周期的终结，会同时调用清理资源代码
+        // 例如以下代码
+        /** address.cc */
+        auto addrinfo_deleter = []( addrinfo* const x ) { freeaddrinfo( x ); };
+        unique_ptr<addrinfo, decltype( addrinfo_deleter )> wrapped_address( resolved_address, move( addrinfo_deleter ) );
+      ```
+      - 委托构造函数在函数体中的写法
+      ```cpp
+        // 例如以下代码实则起到了在同一块内存再次构造的作用
+        *this = Address( wrapped_address->ai_addr, wrapped_address->ai_addrlen );
+      ```
+      - string_view的坑
+      ```cpp
+        // string_view是一个高性能的字符串视图，它不进行任何拷贝，仅仅是字符串的引用
+        // 因为有时const string&也会进行拷贝，不如string_view
+        // 但我在使用过程中踩到了坑，比如下面这段代码中，string_view会表现为乱码
+        string_view req = "GET " + path + " HTTP/1.1\r\nHOST: " + host + "\r\n"+"Connection: close"+"\r\n\r\n";
+        // 这是因为传给它的是一个string，string是保存在栈上的，并且这段空间并没有长期分配
+        // 所以接下来栈变量会用到string_view所保存的那段内存
+        // 之所以右边是个string，是因为做了重载的+运算符
+        // 由此看来，string_view最好用在函数调用或者引用的是常量区的字符串
+      ```
+      - 继承构造函数
+      ```cpp
+        // 默认情况下，构造函数是不会继承的，需要在初始化列表中显示调用
+        // 通过using,可以继承构造函数
+        // 缺点是新的类成员智能通过初始化表达式设置默认值
+        // 例如
+        /** common.hh */
+        template<class T>
+        struct ConstExpectBool : public ConstExpectNumber<T, bool>
+        {
+          using ConstExpectNumber<T, bool>::ConstExpectNumber;
+        };
+      ```
+      
