@@ -136,76 +136,100 @@
 
      - 建立连接后，双方可以直接通信，在telnet中的输入会输出在netcat上（我暂时没有了解其中的原理）
 
-3. Writing a network program using an OS stream socket
+       3. Writing a network program using an OS stream socket
 
-   - 一个套接字编程的demo
+          - 一个套接字编程的demo
    
-   - 克隆这个项目
+          - 克隆这个项目
    
-     ```
-     git clone https://github.com/cs144/minnow
-     ```
+            ```
+            git clone https://github.com/cs144/minnow
+            ```
    
-   - 这里发现了两个问题（ubuntu版本问题）
+          - 这里发现了两个问题（ubuntu版本问题）
    
-     - CMAKE版本要求3.24.x我降到了3.22.x
-     - Gcc要求支持C++20，需要换Gcc13
+            - CMAKE版本要求3.24.x我降到了3.22.x
+            - Gcc要求支持C++20，需要换Gcc13
    
-   - 之后就能按照教程跑起来了
+          - 之后就能按照教程跑起来了
    
-   - Modern C++: mostly safe but still fast and low-level
+          - Modern C++: mostly safe but still fast and low-level
    
-     - 这里给出了一些在本项目中C++的使用规范，同时也适用于大多数项目（为了安全）
-       1. 不要用malloc,free,new,delete这种成对操作
-       2. 不要用C风格字符串
-       3. 本项目不涉及多线程、锁、虚函数
-       4. 不要用指针和智能指针，用引用代替
-       5. 尽量加const修饰
-       6. 避免全局变量
+            - 这里给出了一些在本项目中C++的使用规范，同时也适用于大多数项目（为了安全）
+              1. 不要用malloc,free,new,delete这种成对操作
+              2. 不要用C风格字符串
+              3. 本项目不涉及多线程、锁、虚函数
+              4. 不要用指针和智能指针，用引用代替
+              5. 尽量加const修饰
+              6. 避免全局变量
    
-   - Reading the Minnow support code
+          - Reading the Minnow support code
    
-     - 阅读源码，主要是***util/socket.hh***和***util/file_descriptor.hh***这里基于面向对象设计原则对socket系统调用进行了封装
-     - 一些技巧
-      - 封装传统C释放资源的方式
-      ```cpp
-        // 正常来说，良好的C++程序通过构造函数和析构函数来获取资源、释放资源。
-        // 而传统的C程序通过特定的函数来释放资源
-        // C++程序有可能因为发生了异常，强制退出当前函数，这样就有资源无法释放的可能
-        // 因此我们可以将清理资源的代码绑定到该资源指针构造的unique_ptr之上
-        // 伴随着声明周期的终结，会同时调用清理资源代码
-        // 例如以下代码
-        /** address.cc */
-        auto addrinfo_deleter = []( addrinfo* const x ) { freeaddrinfo( x ); };
-        unique_ptr<addrinfo, decltype( addrinfo_deleter )> wrapped_address( resolved_address, move( addrinfo_deleter ) );
-      ```
-      - 委托构造函数在函数体中的写法
-      ```cpp
-        // 例如以下代码实则起到了在同一块内存再次构造的作用
-        *this = Address( wrapped_address->ai_addr, wrapped_address->ai_addrlen );
-      ```
-      - string_view的坑
-      ```cpp
-        // string_view是一个高性能的字符串视图，它不进行任何拷贝，仅仅是字符串的引用
-        // 因为有时const string&也会进行拷贝，不如string_view
-        // 但我在使用过程中踩到了坑，比如下面这段代码中，string_view会表现为乱码
-        string_view req = "GET " + path + " HTTP/1.1\r\nHOST: " + host + "\r\n"+"Connection: close"+"\r\n\r\n";
-        // 这是因为传给它的是一个string，string是保存在栈上的，并且这段空间并没有长期分配
-        // 所以接下来栈变量会用到string_view所保存的那段内存
-        // 之所以右边是个string，是因为做了重载的+运算符
-        // 由此看来，string_view最好用在函数调用或者引用的是常量区的字符串
-      ```
-      - 继承构造函数
-      ```cpp
-        // 默认情况下，构造函数是不会继承的，需要在初始化列表中显示调用
-        // 通过using,可以继承构造函数
-        // 缺点是新的类成员智能通过初始化表达式设置默认值
-        // 例如
-        /** common.hh */
-        template<class T>
-        struct ConstExpectBool : public ConstExpectNumber<T, bool>
-        {
-          using ConstExpectNumber<T, bool>::ConstExpectNumber;
-        };
-      ```
-      
+            - 阅读源码，主要是***util/socket.hh***和***util/file_descriptor.hh***这里基于面向对象设计原则对socket系统调用进行了封装
+            - 一些技巧
+             - 封装传统C释放资源的方式
+             ```cpp
+               // 正常来说，良好的C++程序通过构造函数和析构函数来获取资源、释放资源。
+               // 而传统的C程序通过特定的函数来释放资源
+               // C++程序有可能因为发生了异常，强制退出当前函数，这样就有资源无法释放的可能
+               // 因此我们可以将清理资源的代码绑定到该资源指针构造的unique_ptr之上
+               // 伴随着声明周期的终结，会同时调用清理资源代码
+               // 例如以下代码
+               /** address.cc */
+               auto addrinfo_deleter = []( addrinfo* const x ) { freeaddrinfo( x ); };
+               unique_ptr<addrinfo, decltype( addrinfo_deleter )> wrapped_address( resolved_address, move( addrinfo_deleter ) );
+             ```
+             - 委托构造函数在函数体中的写法
+             ```cpp
+               // 例如以下代码实则起到了在同一块内存再次构造的作用
+               *this = Address( wrapped_address->ai_addr, wrapped_address->ai_addrlen );
+             ```
+             - string_view的坑
+             ```cpp
+               // string_view是一个高性能的字符串视图，它不进行任何拷贝，仅仅是字符串的引用
+               // 因为有时const string&也会进行拷贝，不如string_view
+               // 但我在使用过程中踩到了坑，比如下面这段代码中，string_view会表现为乱码
+               string_view req = "GET " + path + " HTTP/1.1\r\nHOST: " + host + "\r\n"+"Connection: close"+"\r\n\r\n";
+               // 这是因为传给它的是一个string，string是保存在栈上的，并且这段空间并没有长期分配
+               // 所以接下来栈变量会用到string_view所保存的那段内存
+               // 之所以右边是个string，是因为做了重载的+运算符
+               // 由此看来，string_view最好用在函数调用或者引用的是常量区的字符串
+             ```
+             - 继承构造函数
+             ```cpp
+               // 默认情况下，构造函数是不会继承的，需要在初始化列表中显示调用
+               // 通过using,可以继承构造函数
+               // 缺点是新的类成员智能通过初始化表达式设置默认值
+               // 例如
+               /** common.hh */
+               template<class T>
+               struct ConstExpectBool : public ConstExpectNumber<T, bool>
+               {
+                 using ConstExpectNumber<T, bool>::ConstExpectNumber;
+               };
+             ```
+          - Writing webge
+            - 用socket写一个web请求，坑点在于HTTP协议的最后需要两个\r\n
+            - 需要在理解util中的封装的前提下进行
+          - An in-memory reliable byte stream
+            - 写一个在内存中的数据交换
+            - 不存在线程问题，所以相对容易
+            - 但是这部分坑点在于，实验资料不会把它自己设计的接口的细节告诉你，你也不知道他会怎么调用你写的函数
+            - 需要进行猜测以及阅读源码，我读了测试框架的代码，也在网上找了写别人的笔记，最后发现了自己的程序跑的慢的原因
+            - **坑点在于peek函数不要求查找到缓冲区内的所有字符，这与这套接口的设计理念有关**
+            - 一些提高性能的技巧，实现的不好的话可能无法通过效率测试
+              - 通过resize原地修改string，使用substr会进行拷贝
+              ```cpp
+                  void Writer::push( string data )
+                   {
+                      uint64_t size = std::min(data.size(),capacity_-cur_size);
+                      data.resize(size);
+                      if(data.empty())
+                        return;
+                      buf.push(move(data));
+                      total+=size;
+                      cur_size+=size;
+                   }
+              - ```
+              - 可以用string实现，但是效率太低，因为每次都需要拷贝。peek只会读取一部分字符的理念是让我们直接用queue<string>
+              - string_view的成员函数remove_prefix作用是在原地改变引用的起始地址，相比substr是高效的。用string内的一个地址构造string_view并不规范，破坏了容器的封装性，容易犯错。
