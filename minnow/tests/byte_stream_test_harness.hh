@@ -6,6 +6,7 @@
 #include <concepts>
 #include <optional>
 #include <utility>
+#include <iostream>
 
 static_assert( sizeof( Reader ) == sizeof( ByteStream ),
                "Please add member variables to the ByteStream base, not the ByteStream Reader." );
@@ -20,7 +21,7 @@ public:
     : TestHarness( move( test_name ), "capacity=" + std::to_string( capacity ), ByteStream { capacity } )
   {}
 
-  size_t peek_size() { return object().reader().peek().size(); }
+  size_t peek_size() {return object().reader().peek().size();}
 };
 
 /* actions */

@@ -4,13 +4,28 @@
 #include <iostream>
 #include <span>
 #include <string>
+#include <format>
 
 using namespace std;
 
+// cs144.keithw.org
+// /hello
+
 void get_URL( const string& host, const string& path )
 {
-  cerr << "Function called: get_URL(" << host << ", " << path << ")\n";
-  cerr << "Warning: get_URL() has not been implemented yet.\n";
+  TCPSocket tcp_sock;
+  const Address addr{host,"http"};
+  tcp_sock.connect(addr);
+  string req = "GET " + path + " HTTP/1.1\r\nHOST: " + host + "\r\n"+"Connection: close"+"\r\n\r\n";
+  string msg;
+  tcp_sock.write(req);
+  while(!tcp_sock.eof()){
+    tcp_sock.read(msg);
+    cout<<msg;
+  }
+  
+  // cerr << "Function called: get_URL(" << host << ", " << path << ")\n";
+  // cerr << "Warning: get_URL() has not been implemented yet.\n";
 }
 
 int main( int argc, char* argv[] )
@@ -19,7 +34,6 @@ int main( int argc, char* argv[] )
     if ( argc <= 0 ) {
       abort(); // For sticklers: don't try to access argv[0] if argc <= 0.
     }
-
     auto args = span( argv, argc );
 
     // The program takes two command-line arguments: the hostname and "path" part of the URL.

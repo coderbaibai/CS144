@@ -74,7 +74,8 @@ void speed_test( const size_t input_len,   // NOLINT(bugprone-easily-swappable-p
 
   fstream debug_output;
   debug_output.open( "/dev/tty" );
-
+  cout << "ByteStream with capacity=" << capacity << ", write_size=" << write_size << ", read_size=" << read_size
+       << " reached " << gigabits_per_second << " Gbit/s.\n";
   cout << "ByteStream with capacity=" << capacity << ", write_size=" << write_size << ", read_size=" << read_size
        << " reached " << fixed << setprecision( 2 ) << gigabits_per_second << " Gbit/s.\n";
 
