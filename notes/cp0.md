@@ -230,6 +230,6 @@
                       total+=size;
                       cur_size+=size;
                    }
-              - ```
+              ```
               - 可以用string实现，但是效率太低，因为每次都需要拷贝。peek只会读取一部分字符的理念是让我们直接用queue<string>
               - string_view的成员函数remove_prefix作用是在原地改变引用的起始地址，相比substr是高效的。用string内的一个地址构造string_view并不规范，破坏了容器的封装性，容易犯错。
