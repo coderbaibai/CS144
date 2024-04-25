@@ -1,6 +1,7 @@
 #pragma once
 
 #include "byte_stream.hh"
+#include <deque>
 
 class Reassembler
 {
@@ -41,5 +42,30 @@ public:
   const Writer& writer() const { return output_.writer(); }
 
 private:
+  void write_into_output();
+//  尚未收到的最小地址
+  uint64_t head_index{};
+  struct BufSegment{
+      uint64_t start;
+      std::string data;
+      BufSegment(uint64_t start_in,std::string&& data_in):start(start_in),data(std::move(data_in)){};
+      BufSegment(BufSegment&&input) noexcept : start(input.start),data(std::move(input.data)){};
+      BufSegment(const BufSegment&input) = default;
+      BufSegment& operator=(const BufSegment&input)= default;
+      BufSegment& operator=(BufSegment&&input) noexcept {
+        start = input.start;
+        data = std::move(input.data);
+        return *this;
+      };
+  };
+  enum class SegPoseType:char{SP_BEFORE,SP_INNER,SP_END};
+  struct SegPose{
+    SegPoseType type = SegPoseType::SP_END;
+    std::deque<BufSegment>::iterator iter{};
+  };
+  std::pair<SegPose,SegPose> get_seg_pose(const BufSegment& target);
+  bool slice_input(uint64_t& first_index, std::string& data, bool& is_last_substring);
+  std::deque<BufSegment> segment_queue{};
   ByteStream output_; // the Reassembler writes to this ByteStream
+  bool is_finished{false};
 };
