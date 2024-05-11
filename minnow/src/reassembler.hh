@@ -41,6 +41,12 @@ public:
   // Access output stream writer, but const-only (can't write from outside)
   const Writer& writer() const { return output_.writer(); }
 
+  uint64_t getHeader() const {return head_index;};
+
+  uint16_t window_size() const {
+    return UINT16_MAX<writer().available_capacity()?UINT16_MAX:writer().available_capacity();
+  };
+
 private:
   void write_into_output();
 //  尚未收到的最小地址

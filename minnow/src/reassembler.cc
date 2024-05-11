@@ -144,8 +144,10 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
 
 void Reassembler::write_into_output(){
   if(segment_queue.empty()){
-    if(is_finished)
+    if(is_finished){
+      head_index++;
       output_.writer().close();
+    }
     return;
   }
   if(segment_queue.front().start==head_index){
