@@ -11,7 +11,6 @@ using namespace std;
 
 // cs144.keithw.org
 // /hello
-
 void get_URL( const string& host, const string& path )
 {
   CS144TCPSocket tcp_sock;
@@ -24,7 +23,6 @@ void get_URL( const string& host, const string& path )
     tcp_sock.read(msg);
     cout<<msg;
   }
-  
   // cerr << "Function called: get_URL(" << host << ", " << path << ")\n";
   // cerr << "Warning: get_URL() has not been implemented yet.\n";
 }
