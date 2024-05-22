@@ -44,6 +44,8 @@ void NetworkInterface::send_datagram( const InternetDatagram& dgram, const Addre
     transmit(frame);
     return;
   }
+  //  将未发送的数据报放入队列
+  dgram_buffered_.emplace_back(next_hop.ipv4_numeric(),dgram);
 //  如果5s前已经发送了ARP请求，那么直接返回
   if(req_table_.find(next_hop.ipv4_numeric())!=req_table_.end())
     return;
@@ -67,8 +69,6 @@ void NetworkInterface::send_datagram( const InternetDatagram& dgram, const Addre
   };
   transmit(frame);
   req_table_[next_hop.ipv4_numeric()] = 0;
-//  并且将未发送的数据报放入队列
-  dgram_buffered_.emplace_back(next_hop.ipv4_numeric(),dgram);
 }
 
 //! \param[in] frame the incoming Ethernet frame
